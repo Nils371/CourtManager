@@ -2,7 +2,6 @@ package com.courtmanager.backend.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.math.BigDecimal;
 
 @Getter
