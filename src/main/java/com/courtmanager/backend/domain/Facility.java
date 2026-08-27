@@ -3,6 +3,7 @@ package com.courtmanager.backend.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+@Builder
 @Getter
 @Setter
 @NoArgsConstructor

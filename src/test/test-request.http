@@ -1,0 +1,21 @@
+### 1. Erfolgreiche Buchung erstellen
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+
+{
+  "courtId": 1,
+  "customerId": 1,
+  "startTime": "2026-09-01T14:00:00",
+  "endTime": "2026-09-01T16:00:00"
+}
+
+### 2. Doppelbuchung testen (sollte fehlschlagen)
+POST http://localhost:8080/api/bookings
+Content-Type: application/json
+
+{
+  "courtId": 1,
+  "customerId": 1,
+  "startTime": "2026-09-01T15:00:00",
+  "endTime": "2026-09-01T17:00:00"
+}
