@@ -21,6 +21,8 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         if(userRepository.count() == 0) {
             User user = User.builder()
+                    .firstName("Nils")
+                    .lastName("Tester")
                     .email("nils@test.de")
                     .passwordHash("secret123")
                     .role(Role.CUSTOMER)
