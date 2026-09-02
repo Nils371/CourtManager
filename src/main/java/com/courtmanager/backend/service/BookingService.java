@@ -1,18 +1,22 @@
 package com.courtmanager.backend.service;
 
 import com.courtmanager.backend.domain.*;
+import com.courtmanager.backend.dto.TimeSlot;
 import com.courtmanager.backend.repository.BookingRepository;
 import com.courtmanager.backend.repository.CourtRepository;
 import com.courtmanager.backend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -22,6 +26,9 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final CourtRepository courtRepository;
     private final UserRepository userRepository;
+
+    @Value("${courtmanager.booking.slot-duration-minutes:60}")
+    private int slotDurationMinutes;
 
     @Transactional
     public Booking createBooking(Long courtId, Long customerId, LocalDateTime startTime, LocalDateTime endTime) {

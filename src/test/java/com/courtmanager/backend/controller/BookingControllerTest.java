@@ -1,10 +1,8 @@
 package com.courtmanager.backend.controller;
 
-import com.courtmanager.backend.domain.Booking;
-import com.courtmanager.backend.domain.BookingStatus;
-import com.courtmanager.backend.domain.Court;
-import com.courtmanager.backend.domain.User;
+import com.courtmanager.backend.domain.*;
 import com.courtmanager.backend.dto.BookingRequest;
+import com.courtmanager.backend.dto.TimeSlot;
 import com.courtmanager.backend.service.BookingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -18,12 +16,15 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -105,5 +106,4 @@ class BookingControllerTest {
 
         verify(bookingService, times(1)).cancelBooking(1L);
     }
-
 }
