@@ -1,6 +1,7 @@
 package com.courtmanager.backend.controller;
 
 import com.courtmanager.backend.domain.Booking;
+import com.courtmanager.backend.domain.User;
 import com.courtmanager.backend.dto.BookingRequest;
 import com.courtmanager.backend.dto.BookingResponse;
 import com.courtmanager.backend.dto.TimeSlot;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -23,10 +25,13 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping
-    public ResponseEntity<BookingResponse> createBooking(@Valid @RequestBody BookingRequest request) {
+    public ResponseEntity<BookingResponse> createBooking(
+            @Valid @RequestBody BookingRequest request,
+            @AuthenticationPrincipal User currentUser
+    ) {
         Booking createdBooking = bookingService.createBooking(
                 request.courtId(),
-                request.customerId(),
+                currentUser.getId(),
                 request.startTime(),
                 request.endTime()
         );

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
+import java.time.LocalTime;
 
 @Component
 @RequiredArgsConstructor
@@ -24,7 +25,7 @@ public class DataInitializer implements CommandLineRunner {
                     .firstName("Nils")
                     .lastName("Tester")
                     .email("nils@test.de")
-                    .passwordHash("secret123")
+                    .passwordHash("PW12341234")
                     .role(Role.CUSTOMER)
                     .build();
 
@@ -37,6 +38,8 @@ public class DataInitializer implements CommandLineRunner {
                     .hasShower(true)
                     .hasSnackBar(false)
                     .hasToilet(true)
+                    .closingTime(LocalTime.of(22,0))
+                    .openingTime(LocalTime.of(8,0))
                     .build();
             facilityRepository.save(facility);
 

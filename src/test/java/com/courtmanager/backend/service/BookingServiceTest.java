@@ -43,15 +43,24 @@ class BookingServiceTest {
 
     private Court testCourt;
     private User testCustomer;
+    private Facility testFacility;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(bookingService, "slotDurationMinutes", 60);
 
+        testFacility = Facility.builder()
+                .id(1L)
+                .name("golden beach")
+                .openingTime(LocalTime.of(8,0))
+                .closingTime(LocalTime.of(8,0))
+                .build();
+
         testCourt = Court.builder()
                 .id(1L)
                 .name("Center Court")
                 .hourlyRate(new BigDecimal("25.00"))
+                .facility(testFacility)
                 .build();
 
         testCustomer = User.builder()
@@ -96,6 +105,40 @@ class BookingServiceTest {
         assertThrows(IllegalStateException.class, () ->
                 bookingService.createBooking(1L, 1L, start, end)
         );
+
+        verify(bookingRepository, never()).save(any());
+    }
+
+    @Test
+    void createBooking_NotBookedAtStartOfHour_ShouldThrowException() {
+        LocalDateTime start = LocalDate.now().plusDays(1).atTime(14, 30);
+        LocalDateTime end = LocalDate.now().plusDays(1).atTime(16, 30);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                bookingService.createBooking(1L, 1L, start, end)
+        );
+
+        when(courtRepository.findById(1L)).thenReturn(Optional.of(testCourt));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
+
+        assertEquals("Die Buchung muss zur vollen Stunde starten.", exception.getMessage());
+
+        verify(bookingRepository, never()).save(any());
+    }
+
+    @Test
+    void createBooking_NotBookedDuringOpeningTimes_ShouldThrowException() {
+        LocalDateTime start = LocalDate.now().plusDays(1).atTime(6, 0);
+        LocalDateTime end = LocalDate.now().plusDays(1).atTime(8, 0);
+
+        when(courtRepository.findById(1L)).thenReturn(Optional.of(testCourt));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testCustomer));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                bookingService.createBooking(1L, 1L, start, end)
+        );
+
+        assertEquals("Buchung muss innerhalb der Öffnungszeiten liegen", exception.getMessage());
 
         verify(bookingRepository, never()).save(any());
     }

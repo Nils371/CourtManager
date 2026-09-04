@@ -33,18 +33,34 @@ public class BookingService {
     @Transactional
     public Booking createBooking(Long courtId, Long customerId, LocalDateTime startTime, LocalDateTime endTime) {
 
+        if (!startTime.toLocalDate().equals(endTime.toLocalDate()))
+            throw new IllegalArgumentException("Buchung darf nicht über mehrere Tage gehen");
+
         if(startTime.isBefore(LocalDateTime.now()))
             throw new IllegalArgumentException("Die Buchung muss in der Zukunft liegen");
 
         if(!endTime.isAfter(startTime))
             throw new IllegalArgumentException("Die Buchung muss nach der Startzeit enden");
 
+        if(startTime.getMinute() % slotDurationMinutes != 0)
+            throw new IllegalArgumentException("Die Buchung muss zur vollen Stunde starten.");
+
+        if(startTime.getSecond()  != 0 || startTime.getNano() != 0)
+            throw new IllegalArgumentException("Die Buchung muss zur vollen Stunde starten.");
+
         long durationMinutes = Duration.between(startTime, endTime).toMinutes();
         if(durationMinutes < 60)
             throw new IllegalArgumentException("Die Buchung muss mindestens eine Stunde lang sein");
 
+        if(durationMinutes % slotDurationMinutes != 0)
+            throw new IllegalArgumentException("Es kann nur stundenweise gebucht werden.");
+
         Court court = courtRepository.findById(courtId).orElseThrow(() -> new EntityNotFoundException("Diesen Court gibt es nicht"));
         User user = userRepository.findById(customerId).orElseThrow(() -> new EntityNotFoundException("Diesen User gibt es nicht"));
+        Facility facility = court.getFacility();
+
+        if(startTime.toLocalTime().isBefore(facility.getOpeningTime()) || endTime.toLocalTime().isAfter(facility.getClosingTime()))
+            throw new IllegalArgumentException("Buchung muss innerhalb der Öffnungszeiten liegen");
 
         if(bookingRepository.existsOverlappingBooking(courtId, startTime, endTime, BookingStatus.CANCELLED))
             throw new IllegalStateException("Court ist für diesen Zeitslot schon vergeben");

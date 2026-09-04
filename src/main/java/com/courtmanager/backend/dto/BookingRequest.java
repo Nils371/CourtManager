@@ -10,10 +10,6 @@ public record BookingRequest(
    @Positive(message = "Court ID muss positiv sein.")
    Long courtId,
 
-   @NotNull(message = "Customer ID darf nicht leer sein")
-   @Positive(message = "Customer ID muss positiv sein.")
-   Long customerId,
-
    @NotNull(message = "Startzeit darf nicht leer sein.")
    @Future(message = "Startzeit muss in der Zukunft liegen.")
    LocalDateTime startTime,
