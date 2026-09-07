@@ -8,6 +8,7 @@ import com.courtmanager.backend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -100,11 +101,16 @@ public class BookingService {
     }
 
     @Transactional
-    public Booking cancelBooking(Long bookingId) {
+    public Booking cancelBooking(Long bookingId, User currentUser) {
         Booking booking = getBookingById(bookingId);
 
-        if(booking.getStartTime().isBefore(LocalDateTime.now().plusHours(12)))
-            throw new IllegalStateException("Die Stornierungsfrist von 12 Stunden ist abgelaufen");
+        boolean isOwner = booking.getCustomer().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        boolean isFacilityOwner = booking.getCourt().getFacility().getOwner().getId().equals(currentUser.getId());
+
+        if (!isOwner && !isAdmin && !isFacilityOwner) {
+            throw new AccessDeniedException("Sie sind nicht berechtigt, diese Buchung zu stornieren.");
+        }
 
         if (booking.getStatus() == BookingStatus.CANCELLED) {
             throw new IllegalStateException("Diese Buchung ist bereits storniert");
@@ -112,6 +118,11 @@ public class BookingService {
 
         if (booking.getStartTime().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Vergangene Buchungen können nicht mehr storniert werden");
+        }
+
+        if (!isAdmin && !isFacilityOwner) {
+            if(booking.getStartTime().isBefore(LocalDateTime.now().plusHours(12)))
+                throw new IllegalStateException("Die Stornierungsfrist von 12 Stunden ist abgelaufen");
         }
 
         booking.setStatus(BookingStatus.CANCELLED);

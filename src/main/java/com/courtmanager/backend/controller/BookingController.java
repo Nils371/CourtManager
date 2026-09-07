@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,6 +42,7 @@ public class BookingController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
     public ResponseEntity<BookingResponse> getBookingById(@PathVariable Long id) {
         Booking booking = bookingService.getBookingById(id);
 
@@ -50,6 +52,7 @@ public class BookingController {
     }
 
     @GetMapping("/court/{courtId}")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
     public ResponseEntity<List<BookingResponse>> getBookingsByCourt(@PathVariable Long courtId) {
         List<Booking> bookings = bookingService.getBookingsByCourt(courtId);
         List<BookingResponse> responseList = bookings.stream()
@@ -60,6 +63,7 @@ public class BookingController {
     }
 
     @GetMapping("/customer/{customerId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<BookingResponse>> getBookingsByCustomer(@PathVariable Long customerId) {
         List<Booking> bookings = bookingService.getBookingsByCustomer(customerId);
         List<BookingResponse> responseList = bookings.stream()
@@ -70,11 +74,25 @@ public class BookingController {
     }
 
     @PatchMapping("/{id}/cancel")
-    public ResponseEntity<BookingResponse> cancelBooking(@PathVariable Long id) {
-        Booking booking = bookingService.cancelBooking(id);
+    public ResponseEntity<BookingResponse> cancelBooking(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        Booking booking = bookingService.cancelBooking(id, currentUser);
 
         BookingResponse bookingResponse = BookingResponse.fromEntity(booking);
 
         return ResponseEntity.ok(bookingResponse);
+    }
+
+    @GetMapping("/{id}/my")
+    public ResponseEntity<List<BookingResponse>> getMyBookings(@AuthenticationPrincipal User currentUser) {
+        List<Booking> bookings = bookingService.getBookingsByCustomer(currentUser.getId());
+
+        List<BookingResponse> responseList = bookings.stream()
+                .map(BookingResponse::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(responseList);
     }
 }
