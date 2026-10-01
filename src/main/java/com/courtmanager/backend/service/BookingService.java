@@ -84,25 +84,50 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public Booking getBookingById(Long bookingId) {
-        return bookingRepository.findById(bookingId)
+    public Booking getBookingById(Long bookingId, User currentUser) {
+        Booking booking =bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new EntityNotFoundException("Buchung mit ID " + bookingId + "wurde nicht gefunden."));
 
+
+        boolean isOwner = booking.getCourt().getFacility().getOwner().getId().equals(currentUser.getId());
+        boolean isCustomer = currentUser.getId().equals(booking.getCustomer().getId());
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+
+        if(!isAdmin && !isOwner && !isCustomer) {
+            throw new AccessDeniedException("Sie sind nicht berechtigt die Buchungen zu laden.");
+        }
+
+        return booking;
     }
 
     @Transactional(readOnly = true)
-    public List<Booking> getBookingsByCourt (Long courtId) {
+    public List<Booking> getBookingsByCourt (Long courtId, User currentUser) {
+        Court court = courtRepository.findById(courtId)
+                .orElseThrow(() -> new EntityNotFoundException("Court nicht gefunden."));
+
+        boolean isOwner = court.getFacility().getOwner().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        if(!isAdmin && !isOwner) {
+            throw new AccessDeniedException("Sie sind nicht berechtigt die Buchungen zu laden.");
+        }
+
         return bookingRepository.findByCourtId(courtId);
     }
 
     @Transactional(readOnly = true)
-    public List<Booking> getBookingsByCustomer (Long customerId) {
+    public List<Booking> getBookingsByCustomer (Long customerId, User currentUser) {
+        boolean isCustomer = currentUser.getId().equals(customerId);
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        if(!isAdmin && !isCustomer) {
+            throw new AccessDeniedException("Sie sind nicht berechtigt die Buchungen zu laden.");
+        }
+
         return bookingRepository.findByCustomerId(customerId);
     }
 
     @Transactional
     public Booking cancelBooking(Long bookingId, User currentUser) {
-        Booking booking = getBookingById(bookingId);
+        Booking booking = getBookingById(bookingId, currentUser);
 
         boolean isOwner = booking.getCustomer().getId().equals(currentUser.getId());
         boolean isAdmin = currentUser.getRole() == Role.ADMIN;

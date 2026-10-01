@@ -42,9 +42,11 @@ public class BookingController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
-    public ResponseEntity<BookingResponse> getBookingById(@PathVariable Long id) {
-        Booking booking = bookingService.getBookingById(id);
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN', 'CUSTOMER')")
+    public ResponseEntity<BookingResponse> getBookingById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        Booking booking = bookingService.getBookingById(id, currentUser);
 
         BookingResponse bookingResponse = BookingResponse.fromEntity(booking);
 
@@ -53,8 +55,10 @@ public class BookingController {
 
     @GetMapping("/court/{courtId}")
     @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
-    public ResponseEntity<List<BookingResponse>> getBookingsByCourt(@PathVariable Long courtId) {
-        List<Booking> bookings = bookingService.getBookingsByCourt(courtId);
+    public ResponseEntity<List<BookingResponse>> getBookingsByCourt(
+            @PathVariable Long courtId,
+            @AuthenticationPrincipal User currentUser) {
+        List<Booking> bookings = bookingService.getBookingsByCourt(courtId, currentUser);
         List<BookingResponse> responseList = bookings.stream()
                 .map(BookingResponse::fromEntity)
                 .toList();
@@ -64,8 +68,10 @@ public class BookingController {
 
     @GetMapping("/customer/{customerId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<BookingResponse>> getBookingsByCustomer(@PathVariable Long customerId) {
-        List<Booking> bookings = bookingService.getBookingsByCustomer(customerId);
+    public ResponseEntity<List<BookingResponse>> getBookingsByCustomer(
+            @PathVariable Long customerId,
+            @AuthenticationPrincipal User currentUser) {
+        List<Booking> bookings = bookingService.getBookingsByCustomer(customerId, currentUser);
         List<BookingResponse> responseList = bookings.stream()
                 .map(BookingResponse::fromEntity)
                 .toList();
@@ -85,9 +91,10 @@ public class BookingController {
         return ResponseEntity.ok(bookingResponse);
     }
 
-    @GetMapping("/{id}/my")
-    public ResponseEntity<List<BookingResponse>> getMyBookings(@AuthenticationPrincipal User currentUser) {
-        List<Booking> bookings = bookingService.getBookingsByCustomer(currentUser.getId());
+    @GetMapping("/my")
+    public ResponseEntity<List<BookingResponse>> getMyBookings(
+            @AuthenticationPrincipal User currentUser) {
+        List<Booking> bookings = bookingService.getBookingsByCustomer(currentUser.getId(), currentUser);
 
         List<BookingResponse> responseList = bookings.stream()
                 .map(BookingResponse::fromEntity)

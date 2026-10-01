@@ -1,13 +1,17 @@
 package com.courtmanager.backend.service;
 
 import com.courtmanager.backend.domain.*;
+import com.courtmanager.backend.dto.CreateCourtRequest;
+import com.courtmanager.backend.dto.CreateFacilityRequest;
 import com.courtmanager.backend.dto.TimeSlot;
 import com.courtmanager.backend.repository.BookingRepository;
 import com.courtmanager.backend.repository.CourtRepository;
+import com.courtmanager.backend.repository.FacilityRepository;
 import com.courtmanager.backend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,9 +27,47 @@ public class CourtService {
     private final BookingRepository bookingRepository;
     private final CourtRepository courtRepository;
     private final UserRepository userRepository;
+    private final FacilityRepository facilityRepository;
 
     @Value("${courtmanager.booking.slot-duration-minutes:60}")
     private int slotDurationMinutes;
+
+    @Transactional
+    public Court createCourt(CreateCourtRequest request, User currentUser) {
+        Facility facility = facilityRepository.findById(request.facilityId())
+                .orElseThrow(() -> new EntityNotFoundException("Facility nicht gefunden"));
+
+        boolean isOwner = facility.getOwner().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        if(!isAdmin && !isOwner) { throw new AccessDeniedException("Sie sind nicht berechtigt, einen Court zu erstellen."); }
+
+        Court court = Court.builder()
+                .name(request.name())
+                .isIndoor(request.isIndoor())
+                .hourlyRate(request.hourlyRate())
+                .facility(facility)
+                .build();
+
+        return  courtRepository.save(court);
+    }
+
+    @Transactional(readOnly = true)
+    public Court getCourtById(Long id) {
+        return courtRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Der Court mit der ID " + id + " wurde nicht gefunden."));
+    }
+
+    @Transactional
+    public void deleteCourt(Long courtId, User currentUser) {
+        Court court = getCourtById(courtId);
+
+        boolean isOwner = court.getFacility().getOwner().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        if(!isAdmin && !isOwner) { throw new AccessDeniedException("Sie sind nicht berechtigt, einen Court zu löschen."); }
+
+        courtRepository.delete(court);
+    }
+
 
     @Transactional(readOnly = true)
     public List<TimeSlot> getAvailableTimeSlots (Long courtId, LocalDate date) {
