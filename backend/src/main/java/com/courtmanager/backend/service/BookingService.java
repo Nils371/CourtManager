@@ -27,6 +27,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final CourtRepository courtRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     @Value("${courtmanager.booking.slot-duration-minutes:60}")
     private int slotDurationMinutes;
@@ -80,7 +81,17 @@ public class BookingService {
                 .totalPrice(price)
                 .build();
 
-        return bookingRepository.save(booking);
+        Booking savedBooking = bookingRepository.save(booking);
+
+        emailService.sendBookingConfirmation(
+                user.getEmail(),
+                user.getFirstName(),
+                court.getName(),
+                startTime,
+                endTime
+        );
+
+        return savedBooking;
     }
 
     @Transactional(readOnly = true)

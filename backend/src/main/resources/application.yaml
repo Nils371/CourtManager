@@ -1,6 +1,11 @@
 spring:
   application:
     name: court-manager-backend
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    port: 2525
+    username: 92cee61fd96bc3
+    password: 66f3012c5254dc
 
   datasource:
     url: jdbc:postgresql://localhost:5432/courtmanager
