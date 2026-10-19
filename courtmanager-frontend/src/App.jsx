@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { Routes, Route } from 'react-router-dom';
+import PublicBookingView from "./PublicBookingView.jsx";
 
 function App() {
     const [token, setToken] = useState(null);
@@ -32,54 +33,6 @@ function App() {
             });
     };
 
-    useEffect(() => {
-        if (!token) return;
-
-        axios.get('http://localhost:8080/api/bookings/my', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
-            .then(response => {
-                setBookings(response.data);
-                setError(null);
-            })
-            .catch(err => {
-                setError("Buchungen konnten nicht geladen werden.");
-            });
-    }, [token]);
-
-    if (!token) {
-        return (
-            <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-                <h2>CourtManager Login</h2>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-
-                <form onSubmit={handleLogin}>
-                    <div>
-                        <input
-                            type="text"
-                            placeholder="E-Mail"
-                            value={email}
-                            onChange={e => setEmail(e.target.value)}
-                            style={{ margin: '5px' }}
-                        />
-                    </div>
-                    <div>
-                        <input
-                            type="password"
-                            placeholder="Passwort"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            style={{ margin: '5px' }}
-                        />
-                    </div>
-                    <button type="submit" style={{ margin: '5px' }}>Einloggen</button>
-                </form>
-            </div>
-        );
-    }
-
     const handleCreateBooking = (e) => {
         e.preventDefault();
 
@@ -104,43 +57,90 @@ function App() {
             });
     };
 
-    return (
-        <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-            <h1>CourtManager Dashboard</h1>
+    useEffect(() => {
+        if (!token) return;
 
-            <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
-                <h3>Neuen Platz buchen</h3>
-                {bookingMessage && <p>{bookingMessage}</p>}
+        axios.get('http://localhost:8080/api/bookings/my', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+            .then(response => {
+                setBookings(response.data);
+                setError(null);
+            })
+            .catch(err => {
+                setError("Buchungen konnten nicht geladen werden.");
+            });
+    }, [token]);
 
-                <form onSubmit={handleCreateBooking}>
-                    <div>
-                        <label>Platz-ID (Court): </label>
-                        <input type="number" value={courtId} onChange={e => setCourtId(e.target.value)} required />
+return (
+    <Routes>
+        <Route path="/" element={
+            !token ? (
+                <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+                    <h2>CourtManager Login</h2>
+                    {error && <p style={{ color: 'red' }}>{error}</p>}
+
+                    <form onSubmit={handleLogin}>
+                        <div>
+                            <input
+                                type="text"
+                                placeholder="E-Mail"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                style={{ margin: '5px' }}
+                            />
+                        </div>
+                        <div>
+                            <input
+                                type="password"
+                                placeholder="Passwort"
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                style={{ margin: '5px' }}
+                            />
+                        </div>
+                        <button type="submit" style={{ margin: '5px' }}>Einloggen</button>
+                    </form>
+                </div>
+                ) : (
+                <>
+                    <h1>CourtManager Dashboard</h1>
+                    <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
+                        <h3>Neuen Platz buchen</h3>
+                        {bookingMessage && <p>{bookingMessage}</p>}
+                        <form onSubmit={handleCreateBooking}>
+                            <div>
+                                <label>Platz-ID (Court): </label>
+                                <input type="number" value={courtId} onChange={e => setCourtId(e.target.value)} required />
+                            </div>
+                            <div style={{ marginTop: '10px' }}>
+                                <label>Start: </label>
+                                <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} required />
+                            </div>
+                            <div style={{ marginTop: '10px' }}>
+                                <label>Ende: </label>
+                                <input type="datetime-local" value={endTime} onChange={e => setEndTime(e.target.value)} required />
+                            </div>
+                            <button type="submit" style={{ marginTop: '10px' }}>Buchen</button>
+                        </form>
                     </div>
-                    <div style={{ marginTop: '10px' }}>
-                        <label>Start: </label>
-                        <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} required />
-                    </div>
-                    <div style={{ marginTop: '10px' }}>
-                        <label>Ende: </label>
-                        <input type="datetime-local" value={endTime} onChange={e => setEndTime(e.target.value)} required />
-                    </div>
-                    <button type="submit" style={{ marginTop: '10px' }}>Buchen</button>
-                </form>
-            </div>
+                    <h2>Meine Buchungen</h2>
+                    {error && <p style={{ color: 'red' }}>{error}</p>}
+                    <ul>
+                        {bookings.map(booking => (
+                            <li key={booking.id}>
+                                Platz: {booking.courtName || booking.courtId} | Start: {new Date(booking.startTime).toLocaleString()}
+                            </li>
+                        ))}
+                    </ul>
+                    <button onClick={() => setToken(null)}>Ausloggen</button>
+                </>
+                )
+        } />
+        <Route path="/facility/:facilityId" element={<PublicBookingView/>} />
 
-            <h2>Meine Buchungen</h2>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <ul>
-                {bookings.map(booking => (
-                    <li key={booking.id}>
-                        Platz: {booking.courtName || booking.courtId} | Start: {new Date(booking.startTime).toLocaleString()}
-                    </li>
-                ))}
-            </ul>
-            <button onClick={() => setToken(null)}>Ausloggen</button>
-        </div>
-    );
-}
-
+    </Routes>
+);
 export default App;
