@@ -9,6 +9,11 @@ function App() {
     const [bookings, setBookings] = useState([]);
     const [error, setError] = useState(null);
 
+    const [courtId, setCourtId] = useState('');
+    const [startTime, setStartTime] = useState('');
+    const [endTime, setEndTime] = useState('');
+    const [bookingMessage, setBookingMessage] = useState(null);
+
     const handleLogin = (e) => {
         e.preventDefault();
 
@@ -75,19 +80,64 @@ function App() {
         );
     }
 
+    const handleCreateBooking = (e) => {
+        e.preventDefault();
+
+        axios.post('http://localhost:8080/api/bookings', {
+            courtId: courtId,
+            startTime: startTime,
+            endTime: endTime
+        }, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+            .then(response => {
+                setBookings([...bookings, response.data]);
+                setBookingMessage("Buchung erfolgreich angelegt!");
+
+                setCourtId('');
+                setStartTime('');
+                setEndTime('');
+            })
+            .catch(err => {
+                console.error(err);
+                setBookingMessage("Fehler beim Anlegen der Buchung.");
+            });
+    };
+
     return (
         <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-            <h1>Meine Buchungen</h1>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
+            <h1>CourtManager Dashboard</h1>
 
+            <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
+                <h3>Neuen Platz buchen</h3>
+                {bookingMessage && <p>{bookingMessage}</p>}
+
+                <form onSubmit={handleCreateBooking}>
+                    <div>
+                        <label>Platz-ID (Court): </label>
+                        <input type="number" value={courtId} onChange={e => setCourtId(e.target.value)} required />
+                    </div>
+                    <div style={{ marginTop: '10px' }}>
+                        <label>Start: </label>
+                        <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} required />
+                    </div>
+                    <div style={{ marginTop: '10px' }}>
+                        <label>Ende: </label>
+                        <input type="datetime-local" value={endTime} onChange={e => setEndTime(e.target.value)} required />
+                    </div>
+                    <button type="submit" style={{ marginTop: '10px' }}>Buchen</button>
+                </form>
+            </div>
+
+            <h2>Meine Buchungen</h2>
+            {error && <p style={{ color: 'red' }}>{error}</p>}
             <ul>
                 {bookings.map(booking => (
                     <li key={booking.id}>
-                        Platz: {booking.courtName} | Start: {new Date(booking.startTime).toLocaleString()}
+                        Platz: {booking.courtName || booking.courtId} | Start: {new Date(booking.startTime).toLocaleString()}
                     </li>
                 ))}
             </ul>
-
             <button onClick={() => setToken(null)}>Ausloggen</button>
         </div>
     );
