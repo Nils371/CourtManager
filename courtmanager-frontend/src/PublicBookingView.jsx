@@ -5,6 +5,7 @@ import axios from "axios";
 function PublicBookingView() {
     const urlParameter = useParams();
     const [courts, setCourts] = useState([]);
+    const [timeSlots, setTimeSlots] = useState([]);
 
     useEffect( () => {
         axios.get(`http://localhost:8080/api/facilities/${urlParameter.facilityId}/courts`)
@@ -14,6 +15,17 @@ function PublicBookingView() {
     }, [urlParameter]);
 
     console.log(urlParameter);
-    return(<h1> "Hier entsteht später der Kalender" </h1>);
+    return(
+        <ul>
+            {
+                courts.map( court => <li key = {court.id}>  {court.name} </li>)
+            }
+        </ul>
+    );
+}
+
+function fetchAvailability(courtId) {
+    axios.get(`http://localhost:8080/api/facilities/${urlParameter.facilityId}/courts`)
+
 }
 export default PublicBookingView;
