@@ -32,7 +32,6 @@ h2 {
     padding-bottom: 12px;
 }
 
-/* Bezahlmethoden (Links) */
 .payment-options {
     display: flex;
     flex-direction: column;
@@ -65,7 +64,6 @@ h2 {
     accent-color: #007aff;
 }
 
-/* Bestellübersicht (Rechts) */
 .summary-item {
     display: flex;
     justify-content: space-between;

@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import './CheckoutView.css';
+import { FaPaypal, FaApplePay, FaGooglePay, FaCreditCard } from "react-icons/fa";
 
 function CheckoutView() {
     const location = useLocation();
@@ -8,8 +9,17 @@ function CheckoutView() {
         selectedSlots: [], cartSummary: [], grandTotal: 0
     };
 
+    const paymentOptions = [
+        { id: 'paypal', name: 'PayPal', icon: <FaPaypal size={24} color="#003087" /> },
+        { id: 'apple_pay', name: 'Apple Pay', icon: <FaApplePay size={24} color="#1c1c1e" /> },
+        { id: 'google_pay', name: 'Google Pay', icon: <FaGooglePay size={24} color="#5f6368" /> },
+        { id: 'kreditkarte', name: 'Kreditkarte', icon: <FaCreditCard size={22} color="#8e8e93" /> }
+    ];
+
     // State für die ausgewählte Bezahlmethode
     const [paymentMethod, setPaymentMethod] = useState("paypal");
+
+
 
     // 1. Die rohen IDs in detaillierte Buchungsinformationen umwandeln
     const detailedOrder = selectedSlots.map(slotId => {
@@ -33,6 +43,7 @@ function CheckoutView() {
 
         return {
             id: slotId,
+            courtId,
             courtName,
             date: formattedDate,
             time: `${startTime} - ${endTime}`,
@@ -49,25 +60,25 @@ function CheckoutView() {
                     <h2>Zahlungsmethode wählen</h2>
 
                     <div className="payment-options">
-                        {['paypal', 'apple_pay', 'google_pay', 'kreditkarte'].map(method => (
+                        {/* 3. Die Schleife greift jetzt auf das Objekt zu */}
+                        {paymentOptions.map(method => (
                             <label
-                                key={method}
-                                className={`payment-label ${paymentMethod === method ? 'selected' : ''}`}
+                                key={method.id}
+                                className={`payment-label ${paymentMethod === method.id ? 'selected' : ''}`}
                             >
                                 <input
                                     type="radio"
                                     name="payment"
-                                    value={method}
-                                    checked={paymentMethod === method}
+                                    value={method.id}
+                                    checked={paymentMethod === method.id}
                                     onChange={(e) => setPaymentMethod(e.target.value)}
                                 />
-                                {/* Namen für die Anzeige aufhübschen */}
-                                <span>
-                                    {method === 'paypal' && 'PayPal'}
-                                    {method === 'apple_pay' && 'Apple Pay'}
-                                    {method === 'google_pay' && 'Google Pay'}
-                                    {method === 'kreditkarte' && 'Kreditkarte'}
-                                </span>
+
+                                {/* Ein kleiner Container, der Icon und Text bündelt */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    {method.icon}
+                                    <span style={{ fontWeight: '500' }}>{method.name}</span>
+                                </div>
                             </label>
                         ))}
                     </div>
@@ -78,15 +89,27 @@ function CheckoutView() {
                     <h2>Bestellübersicht</h2>
 
                     <div className="order-items">
-                        {detailedOrder.map(item => (
-                            <div key={item.id} className="summary-item">
-                                <div>
-                                    <strong>{item.courtName}</strong>
-                                    <div className="item-details">{item.date} | {item.time}</div>
+                        {cartSummary.map(court => {
+                            // Finde alle gebuchten Zeiten, die zu exakt diesem Court gehören
+                            const courtSlots = detailedOrder.filter(item => item.courtId === court.id);
+
+                            return (
+                                <div key={court.id} className="court-group" style={{ marginBottom: '24px' }}>
+                                    {/* 1. Der Name des Courts als saubere Gruppen-Überschrift */}
+                                    <strong style={{ fontSize: '1.1rem', display: 'block', marginBottom: '12px' }}>
+                                        {court.name}
+                                    </strong>
+
+                                    {/* 2. Die Liste der Zeiten nur für diesen spezifischen Court */}
+                                    {courtSlots.map(item => (
+                                        <div key={item.id} className="summary-item" style={{ marginBottom: '12px', paddingBottom: '12px' }}>
+                                            <div className="item-details">{item.date} | {item.time}</div>
+                                            <div className="item-price">{item.price} €</div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="item-price">{item.price} €</div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     <div className="total-row">
