@@ -15,7 +15,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/courts")
@@ -38,13 +41,17 @@ public class CourtController {
     }
 
     @GetMapping("/{courtId}/availability")
-    public ResponseEntity<List<TimeSlot>> getAvailableTimeSlots(
+    public ResponseEntity<Map<LocalDate, List<TimeSlot>>> getAvailableTimeSlotsForNextSevenDays(
             @PathVariable Long courtId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate) {
+        Map<LocalDate, List<TimeSlot>> map = new LinkedHashMap<>();
 
-        List<TimeSlot> availableTimeSlots = courtService.getAvailableTimeSlots(courtId, date);
+        for(int i = 0; i < 7; i++) {
+            List<TimeSlot> availableTimeSlots = courtService.getAvailableTimeSlots(courtId, startDate.plusDays(i));
+            map.put(startDate.plusDays(i), availableTimeSlots);
+        }
 
-        return ResponseEntity.ok(availableTimeSlots);
+        return ResponseEntity.ok(map);
     }
 
     @DeleteMapping("{id}")

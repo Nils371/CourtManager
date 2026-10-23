@@ -1,9 +1,12 @@
 package com.courtmanager.backend.controller;
 
+import com.courtmanager.backend.domain.Court;
 import com.courtmanager.backend.domain.Facility;
 import com.courtmanager.backend.domain.User;
+import com.courtmanager.backend.dto.CourtResponse;
 import com.courtmanager.backend.dto.CreateFacilityRequest;
 import com.courtmanager.backend.dto.FacilityResponse;
+import com.courtmanager.backend.service.CourtService;
 import com.courtmanager.backend.service.FacilityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,13 +16,18 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
+
 @RestController
 @RequestMapping("/api/facilities")
 @RequiredArgsConstructor
 public class FacilityController {
 
     private final FacilityService facilityService;
+    private final CourtService courtService;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
@@ -31,6 +39,17 @@ public class FacilityController {
 
         FacilityResponse facilityResponse = FacilityResponse.fromEntity(createdFacility);
         return new ResponseEntity<>(facilityResponse, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/{facilityId}/courts")
+    public ResponseEntity<List<CourtResponse>> getCourtsByFacilityId(@PathVariable Long facilityId) {
+        List<Court> courts = courtService.getCourtsByFacilityId(facilityId);
+        List<CourtResponse> responseList = new ArrayList<>();
+
+        for(Court court : courts) {
+            responseList.add(CourtResponse.fromEntity(court));
+        }
+        return ResponseEntity.ok(responseList);
     }
 
     @GetMapping("/facility/{facilityId}")

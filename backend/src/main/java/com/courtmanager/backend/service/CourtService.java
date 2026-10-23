@@ -68,6 +68,10 @@ public class CourtService {
         courtRepository.delete(court);
     }
 
+    @Transactional(readOnly = true)
+    public List<Court> getCourtsByFacilityId(Long facilityId) {
+        return courtRepository.findByFacilityId(facilityId);
+    }
 
     @Transactional(readOnly = true)
     public List<TimeSlot> getAvailableTimeSlots (Long courtId, LocalDate date) {
