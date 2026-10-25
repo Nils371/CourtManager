@@ -1,0 +1,8 @@
+/build/
+/out/
+/target/
+/bin/
+.gradle/
+*.class
+*.jar
+/src/main/resources/application.yaml
