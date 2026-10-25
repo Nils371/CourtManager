@@ -20,7 +20,7 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if(userRepository.count() == 0) {
+        if(courtRepository.count() == 0) {
             User user = User.builder()
                     .firstName("Nils")
                     .lastName("Tester")

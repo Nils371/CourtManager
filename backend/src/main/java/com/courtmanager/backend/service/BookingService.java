@@ -1,6 +1,8 @@
 package com.courtmanager.backend.service;
 
 import com.courtmanager.backend.domain.*;
+import com.courtmanager.backend.dto.CheckoutRequest;
+import com.courtmanager.backend.dto.ContactInfo;
 import com.courtmanager.backend.dto.TimeSlot;
 import com.courtmanager.backend.repository.BookingRepository;
 import com.courtmanager.backend.repository.CourtRepository;
@@ -33,7 +35,48 @@ public class BookingService {
     private int slotDurationMinutes;
 
     @Transactional
-    public Booking createBooking(Long courtId, Long customerId, LocalDateTime startTime, LocalDateTime endTime) {
+    public List<Booking> processCheckout(CheckoutRequest request) {
+        List<Booking> savedBookings = new ArrayList<>();
+
+        User customer = resolveCustomer(request.checkoutMode(), request.contactInfo());
+
+        for(String slotId : request.bookedSlots()) {
+            String[] parts = slotId.split("_");
+            Long courtId = Long.parseLong(parts[0]);
+            LocalDateTime startTime = LocalDateTime.parse(parts[1]);
+            LocalDateTime endTime = startTime.plusHours(1);
+
+            Booking newBooking = createBookingEntity(courtId, customer.getId(), startTime, endTime);
+            savedBookings.add(newBooking);
+        }
+
+        emailService.sendCheckoutSummary(customer.getEmail(), customer.getFirstName(), savedBookings);
+        return savedBookings;
+    }
+
+    private User resolveCustomer(String mode, ContactInfo contact) {
+        if ("login".equals(mode)) {
+            return userRepository.findByEmail(contact.email())
+                    .orElseThrow(() -> new EntityNotFoundException("Nutzer nicht gefunden"));
+        }
+
+        if ("register".equals(mode) || "guest".equals(mode)) {
+            User newUser = User.builder()
+                    .firstName(contact.firstName())
+                    .lastName(contact.lastName())
+                    .email(contact.email())
+                    .phone(contact.phone())
+                    .passwordHash(contact.password())
+                    .role(Role.CUSTOMER)
+                    .build();
+            return userRepository.save(newUser);
+        }
+
+        throw new IllegalArgumentException("Ungültiger Checkout-Modus");
+    }
+
+    @Transactional
+    private Booking createBookingEntity(Long courtId, Long customerId, LocalDateTime startTime, LocalDateTime endTime) {
 
         if (!startTime.toLocalDate().equals(endTime.toLocalDate()))
             throw new IllegalArgumentException("Buchung darf nicht über mehrere Tage gehen");
@@ -82,16 +125,21 @@ public class BookingService {
                 .build();
 
         Booking savedBooking = bookingRepository.save(booking);
+        return savedBooking;
+    }
+
+    @Transactional
+    public Booking createBooking(Long courtId, Long customerId, LocalDateTime startTime, LocalDateTime endTime) {
+        Booking booking = createBookingEntity(courtId, customerId, startTime, endTime);
 
         emailService.sendBookingConfirmation(
-                user.getEmail(),
-                user.getFirstName(),
-                court.getName(),
+                booking.getCustomer().getEmail(),
+                booking.getCustomer().getFirstName(),
+                booking.getCourt().getName(),
                 startTime,
                 endTime
         );
-
-        return savedBooking;
+        return booking;
     }
 
     @Transactional(readOnly = true)

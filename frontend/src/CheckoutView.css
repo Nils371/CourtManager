@@ -107,3 +107,51 @@ h2 {
     transform: scale(0.98);
     background-color: #006ce6;
 }
+
+/* Layout-Anpassung für die linke Seite */
+.left-column {
+    flex: 2;
+}
+
+/* Toggle-Buttons */
+.mode-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #8e8e93;
+    transition: color 0.2s;
+}
+
+.mode-label.active {
+    color: #1c1c1e;
+    font-weight: 600;
+}
+
+/* Formular Raster */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.input-field {
+    padding: 14px 16px;
+    border: 1px solid #e5e5ea;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.2s ease;
+    background-color: #fafafa;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: #007aff;
+    background-color: #ffffff;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}

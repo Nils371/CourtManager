@@ -4,6 +4,7 @@ import com.courtmanager.backend.domain.Booking;
 import com.courtmanager.backend.domain.User;
 import com.courtmanager.backend.dto.BookingRequest;
 import com.courtmanager.backend.dto.BookingResponse;
+import com.courtmanager.backend.dto.CheckoutRequest;
 import com.courtmanager.backend.dto.TimeSlot;
 import com.courtmanager.backend.service.BookingService;
 import jakarta.validation.Valid;
@@ -24,6 +25,19 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
+
+    @PostMapping("/checkout")
+    public ResponseEntity<List<BookingResponse>> processCheckout(
+            @RequestBody CheckoutRequest request
+            ) {
+        List<Booking> createdBookings = bookingService.processCheckout(request);
+
+        List<BookingResponse> responseList = createdBookings.stream()
+                .map(BookingResponse::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(responseList);
+    }
 
     @PostMapping
     public ResponseEntity<BookingResponse> createBooking(
