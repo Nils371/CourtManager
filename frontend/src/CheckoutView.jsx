@@ -16,17 +16,19 @@ function CheckoutView() {
         { id: 'kreditkarte', name: 'Kreditkarte', icon: <FaCreditCard size={22} color="#8e8e93" /> }
     ];
 
-    // State für die ausgewählte Bezahlmethode
+
     const [paymentMethod, setPaymentMethod] = useState("paypal");
 
     const [checkoutMode, setCheckoutMode] = useState("guest");
-    const [contactInfo, setcontactInfo] = useState({
+    const [contactInfo, setContactInfo] = useState({
         firstName: "",
         lastName: "",
         email: "",
         phone: "",
         password: ""
     })
+
+    const[isSubmitting, setIsSubmitting] = useState(false);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -38,55 +40,78 @@ function CheckoutView() {
     const [errorMessage, setErrorMessage] = useState("");
 
     const handleCheckout = async () => {
-        setErrorMessage(""); // Vorherige Fehler beim neuen Klick zurücksetzen
+        setErrorMessage("");
+        // (Deine bisherige Validierung, z. B. ob Felder leer sind, bleibt hier)
+        setIsSubmitting(true);
 
-        // 1. Validierung der Pflichtfelder je nach Modus
-        if (checkoutMode === 'login' && (!contactInfo.email || !contactInfo.password)) {
-            setErrorMessage("Bitte E-Mail und Passwort eingeben.");
-            return;
-        }
-
-        if ((checkoutMode === 'guest' || checkoutMode === 'register') &&
-            (!contactInfo.firstName || !contactInfo.lastName || !contactInfo.email)) {
-            setErrorMessage("Bitte alle Pflichtfelder (Vorname, Nachname, E-Mail) ausfüllen.");
-            return;
-        }
-
-        if (checkoutMode === 'register' && !contactInfo.password) {
-            setErrorMessage("Bitte ein Passwort für das neue Konto festlegen.");
-            return;
-        }
-
-        // 2. Das Datenpaket (Payload) für das Backend schnüren
-        const payload = {
-            checkoutMode: checkoutMode,
-            contactInfo: contactInfo,
-            paymentMethod: paymentMethod,
-            bookedSlots: selectedSlots // Deine IDs, z.B. ["1_2026-10-22T08:00:00"]
-        };
-
-        // 3. POST-Request an Spring Boot
         try {
-            // Passe die URL an deinen tatsächlichen Controller-Endpunkt an
-            const response = await fetch("http://localhost:8080/api/bookings/checkout", {
+            let jwtToken = localStorage.getItem("token"); // Holt bestehenden Token, falls Nutzer schon eingeloggt ist
+
+            // STUFE 1: Authentifizierung (nur bei Login oder Registrierung)
+            if (checkoutMode === 'login' || checkoutMode === 'register') {
+                const authEndpoint = checkoutMode === 'login'
+                    ? "http://localhost:8080/api/auth/login"
+                    : "http://localhost:8080/api/auth/register";
+
+                // Den Payload je nach Modus an deine bestehenden Auth-Klassen anpassen
+                const authPayload = checkoutMode === 'login'
+                    ? { email: contactInfo.email, password: contactInfo.password }
+                    : {
+                        firstName: contactInfo.firstName,
+                        lastName: contactInfo.lastName,
+                        email: contactInfo.email,
+                        phone: contactInfo.phone,
+                        password: contactInfo.password
+                    };
+
+                const authResponse = await fetch(authEndpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(authPayload)
+                });
+
+                if (!authResponse.ok) throw new Error("Fehler bei der Anmeldung/Registrierung. Bitte Daten prüfen.");
+
+                const authData = await authResponse.json();
+                jwtToken = authData.token; // Speichert den vom Backend generierten Token
+                localStorage.setItem("token", jwtToken);
+            }
+
+            const bookingEndpoint = checkoutMode === 'guest'
+                ? "http://localhost:8080/api/bookings/guest-checkout"
+                : "http://localhost:8080/api/bookings/checkout";
+
+            const bookingPayload = {
+                checkoutMode: checkoutMode,
+                paymentMethod: paymentMethod,
+                bookedSlots: selectedSlots,
+                contactInfo: checkoutMode === 'guest' ? contactInfo : null // Nur Gäste müssen Kontaktinfos mitsenden
+            };
+
+            const headers = { "Content-Type": "application/json" };
+
+            // Füge den Token hinzu, wenn wir nicht im Gast-Modus sind
+            if (jwtToken && checkoutMode !== 'guest') {
+                headers["Authorization"] = `Bearer ${jwtToken}`;
+            }
+
+            const response = await fetch(bookingEndpoint, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload)
+                headers: headers,
+                body: JSON.stringify(bookingPayload)
             });
 
             if (!response.ok) {
-                // Versuche, die Fehlermeldung vom Backend zu lesen
                 const errorData = await response.text();
-                throw new Error(errorData || "Fehler bei der Buchung. Bitte erneut versuchen.");
+                throw new Error(errorData || "Fehler bei der Buchung.");
             }
 
-            // 4. Bei Erfolg: Zur Bestätigungsseite weiterleiten
             navigate("/success");
 
         } catch (error) {
             setErrorMessage(error.message);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -118,6 +143,17 @@ function CheckoutView() {
             time: `${startTime} - ${endTime}`,
             price: courtData ? courtData.totalPrice / courtData.count : 0 // Einzelpreis berechnen
         };
+    });
+
+    const groupedSlots = selectedSlots.reduce((acc, slot) => {
+        const [courtId, dateTime] = slot.split('_');
+        if (!acc[courtId]) acc[courtId] = [];
+        acc[courtId].push(dateTime);
+        return acc;
+    }, {});
+
+    Object.keys(groupedSlots).forEach(courtId => {
+        groupedSlots[courtId].sort((a, b) => new Date(a) - new Date(b));
     });
 
     return (
@@ -199,17 +235,20 @@ function CheckoutView() {
 
                     <div className="order-items">
                         {cartSummary.map(court => {
-                            // Finde alle gebuchten Zeiten, die zu exakt diesem Court gehören
-                            const courtSlots = detailedOrder.filter(item => item.courtId === court.id);
+                            const courtSlots = detailedOrder
+                                .filter(item => item.courtId === court.id)
+                                .sort((a, b) => {
+                                    const timeA = a.id.split('_')[1];
+                                    const timeB = b.id.split('_')[1];
+                                    return new Date(timeA) - new Date(timeB);
+                                });
 
                             return (
                                 <div key={court.id} className="court-group" style={{ marginBottom: '24px' }}>
-                                    {/* 1. Der Name des Courts als saubere Gruppen-Überschrift */}
                                     <strong style={{ fontSize: '1.1rem', display: 'block', marginBottom: '12px' }}>
                                         {court.name}
                                     </strong>
 
-                                    {/* 2. Die Liste der Zeiten nur für diesen spezifischen Court */}
                                     {courtSlots.map(item => (
                                         <div key={item.id} className="summary-item" style={{ marginBottom: '12px', paddingBottom: '12px' }}>
                                             <div className="item-details">{item.date} | {item.time}</div>
@@ -226,7 +265,12 @@ function CheckoutView() {
                         <strong>{grandTotal} €</strong>
                     </div>
 
-                    <button className="buy-btn">
+                    <button
+                        className="buy-btn"
+                        onClick={handleCheckout}
+                        disabled={isSubmitting}
+                        style={{ opacity: isSubmitting ? 0.7 : 1, cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
+                    >
                         Kostenpflichtig buchen
                     </button>
                 </div>

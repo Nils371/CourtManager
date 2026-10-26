@@ -6,6 +6,7 @@ import com.courtmanager.backend.dto.BookingRequest;
 import com.courtmanager.backend.dto.BookingResponse;
 import com.courtmanager.backend.dto.CheckoutRequest;
 import com.courtmanager.backend.dto.TimeSlot;
+import com.courtmanager.backend.repository.UserRepository;
 import com.courtmanager.backend.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -25,12 +27,30 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final UserRepository userRepository;
 
     @PostMapping("/checkout")
     public ResponseEntity<List<BookingResponse>> processCheckout(
-            @RequestBody CheckoutRequest request
+            @RequestBody CheckoutRequest request,
+            Principal principal
             ) {
-        List<Booking> createdBookings = bookingService.processCheckout(request);
+        User user = userRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new RuntimeException("Nutzer nicht gefunden"));
+
+        List<Booking> createdBookings = bookingService.processAuthenticatedCheckout(request, user);
+
+        List<BookingResponse> responseList = createdBookings.stream()
+                .map(BookingResponse::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(responseList);
+    }
+
+    @PostMapping("/guest-checkout")
+    public ResponseEntity<List<BookingResponse>> processGuestCheckout(
+            @RequestBody CheckoutRequest request
+    ) {
+        List<Booking> createdBookings = bookingService.processGuestCheckout(request);
 
         List<BookingResponse> responseList = createdBookings.stream()
                 .map(BookingResponse::fromEntity)

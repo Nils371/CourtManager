@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -35,12 +36,34 @@ public class BookingService {
     private int slotDurationMinutes;
 
     @Transactional
-    public List<Booking> processCheckout(CheckoutRequest request) {
+    public List<Booking> processAuthenticatedCheckout(CheckoutRequest request, User user) {
+        return executeBookingProcess(user, request.bookedSlots());
+    }
+
+    @Transactional
+    public List<Booking> processGuestCheckout(CheckoutRequest request) {
+        ContactInfo contact = request.contactInfo();
+
+        User guestUser = userRepository.findByEmail(contact.email())
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .firstName(contact.firstName())
+                            .lastName(contact.lastName())
+                            .email(contact.email())
+                            .phone(contact.phone())
+                            .passwordHash(UUID.randomUUID().toString())
+                            .role(Role.CUSTOMER)
+                            .build();
+                    return userRepository.save(newUser);
+                });
+
+        return executeBookingProcess(guestUser, request.bookedSlots());
+    }
+
+    private List<Booking> executeBookingProcess(User customer, List<String> bookedSlots) {
         List<Booking> savedBookings = new ArrayList<>();
 
-        User customer = resolveCustomer(request.checkoutMode(), request.contactInfo());
-
-        for(String slotId : request.bookedSlots()) {
+        for(String slotId : bookedSlots) {
             String[] parts = slotId.split("_");
             Long courtId = Long.parseLong(parts[0]);
             LocalDateTime startTime = LocalDateTime.parse(parts[1]);
@@ -52,27 +75,6 @@ public class BookingService {
 
         emailService.sendCheckoutSummary(customer.getEmail(), customer.getFirstName(), savedBookings);
         return savedBookings;
-    }
-
-    private User resolveCustomer(String mode, ContactInfo contact) {
-        if ("login".equals(mode)) {
-            return userRepository.findByEmail(contact.email())
-                    .orElseThrow(() -> new EntityNotFoundException("Nutzer nicht gefunden"));
-        }
-
-        if ("register".equals(mode) || "guest".equals(mode)) {
-            User newUser = User.builder()
-                    .firstName(contact.firstName())
-                    .lastName(contact.lastName())
-                    .email(contact.email())
-                    .phone(contact.phone())
-                    .passwordHash(contact.password())
-                    .role(Role.CUSTOMER)
-                    .build();
-            return userRepository.save(newUser);
-        }
-
-        throw new IllegalArgumentException("Ungültiger Checkout-Modus");
     }
 
     @Transactional

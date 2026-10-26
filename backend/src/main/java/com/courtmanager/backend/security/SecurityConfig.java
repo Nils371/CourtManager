@@ -44,7 +44,9 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/api/courts/**").permitAll()
+                        .requestMatchers("/api/courts/**").permitAll()
+
+                        .requestMatchers("/api/bookings/guest-checkout").permitAll()
 
                         .anyRequest().authenticated()
                 )
