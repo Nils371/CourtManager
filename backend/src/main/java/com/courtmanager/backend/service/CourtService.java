@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,6 +81,7 @@ public class CourtService {
 
         Facility facility = court.getFacility();
 
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Europe/Berlin"));
         LocalDateTime dayStart = LocalDateTime.of(date, facility.getOpeningTime());
         LocalDateTime dayEnd = LocalDateTime.of(date, facility.getClosingTime());
 
@@ -103,7 +105,11 @@ public class CourtService {
                             booking.getEndTime().isAfter(slotStart)
             );
 
-            slots.add(new TimeSlot(slotStart, slotEnd, !hasOverlap));
+            boolean isPast = slotStart.isBefore(now);
+
+            boolean isAvailable = !hasOverlap && !isPast;
+
+            slots.add(new TimeSlot(slotStart, slotEnd, isAvailable, hasOverlap, isPast));
 
             currentStart = slotEnd;
         }

@@ -5,5 +5,7 @@ import java.time.LocalDateTime;
 public record TimeSlot(
         LocalDateTime start,
         LocalDateTime end,
-        boolean isAvailable
+        boolean isAvailable,
+        boolean isBooked,
+        boolean isPast
 ) {}

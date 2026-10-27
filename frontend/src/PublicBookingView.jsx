@@ -10,6 +10,12 @@ function PublicBookingView() {
     const [allAvailabilities, setAllAvailabilities] = useState({});
     const navigate = useNavigate();
 
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2,'0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const currentDate = `${year}-${month}-${day}`;
+
     useEffect(() => {
         axios.get(`http://localhost:8080/api/facilities/${urlParameter.facilityId}/courts`)
             .then(response => {
@@ -25,7 +31,7 @@ function PublicBookingView() {
                 const newAvailabilities = {};
 
                 const fetchPromises = courts.map(async (court) => {
-                    const response = await axios.get(`http://localhost:8080/api/courts/${court.id}/availability?startDate=2026-10-22`);
+                    const response = await axios.get(`http://localhost:8080/api/courts/${court.id}/availability?startDate=${currentDate}`);
                     newAvailabilities[court.id] = response.data;
                 });
 
@@ -127,20 +133,31 @@ function PublicBookingView() {
 
                                                     return (
                                                         <td key={day}>
-                                                            {exactSlot ? (
-                                                                exactSlot.isAvailable ? (
-                                                                    <button
-                                                                        className={`slot-frei ${isSelected ? 'slot-selected' : ''}`}
-                                                                        onClick={() => handleSlotClick(court, exactSlot)}
-                                                                    >
-                                                                        {isSelected ? 'Ausgewählt' : 'Buchen'}
-                                                                    </button>
-                                                                ) : (
-                                                                    <button className="slot-belegt">
-                                                                        Warteliste
-                                                                    </button>
-                                                                )
-                                                            ) : <span className="slot-leer">-</span>}
+                                                            {!exactSlot ? (
+                                                                <span className="slot-leer">-</span>
+                                                            ) : exactSlot.isPast ? (
+                                                                // 2. Fall: Der Slot liegt in der Vergangenheit
+                                                                <button className="slot-vergangen" disabled>
+                                                                    Vergangen
+                                                                </button>
+                                                            ) : exactSlot.isBooked ? (
+                                                                // 3. Fall: Der Slot ist ausgebucht
+                                                                <button
+                                                                    className="slot-belegt"
+                                                                    // Hier kannst du später deine Wartelisten-Funktion einbauen:
+                                                                    // onClick={() => handleWaitlist(exactSlot)}
+                                                                >
+                                                                    Warteliste
+                                                                </button>
+                                                            ) : (
+                                                                // 4. Fall: Der Slot ist frei (isAvailable ist automatisch true)
+                                                                <button
+                                                                    className={`slot-frei ${isSelected ? 'slot-selected' : ''}`}
+                                                                    onClick={() => handleSlotClick(court, exactSlot)}
+                                                                >
+                                                                    {isSelected ? 'Ausgewählt' : 'Buchen'}
+                                                                </button>
+                                                            )}
                                                         </td>
                                                     );
                                                 })}

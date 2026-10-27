@@ -94,6 +94,7 @@ function CheckoutView() {
             if (jwtToken && checkoutMode !== 'guest') {
                 headers["Authorization"] = `Bearer ${jwtToken}`;
             }
+            console.log("REACT PAKET:", JSON.stringify(bookingPayload));
 
             const response = await fetch(bookingEndpoint, {
                 method: "POST",
