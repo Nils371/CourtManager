@@ -1,0 +1,17 @@
+.dashboard-btn {
+    width: fit-content;
+    padding: 14px 8px;
+    background-color: grey;
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 18px
+}
+
+.dashboard-btn:hover {
+    transform: scale(0.98);
+}

@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import './CheckoutView.css';
 import { FaPaypal, FaApplePay, FaGooglePay, FaCreditCard } from "react-icons/fa";
+import axios from 'axios';
 
 function CheckoutView() {
     const location = useLocation();
@@ -41,19 +42,27 @@ function CheckoutView() {
 
     const handleCheckout = async () => {
         setErrorMessage("");
-        // (Deine bisherige Validierung, z. B. ob Felder leer sind, bleibt hier)
+
+        if (checkoutMode !== 'login' && (!contactInfo.firstName || !contactInfo.lastName)) {
+            setErrorMessage("Bitte gib deinen Vor- und Nachnamen ein.");
+            return;
+        }
+        if (!contactInfo.email.includes("@")) {
+            setErrorMessage("Bitte gib eine gültige E-Mail-Adresse ein.");
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
-            let jwtToken = localStorage.getItem("token"); // Holt bestehenden Token, falls Nutzer schon eingeloggt ist
+            let jwtToken = localStorage.getItem("token");
 
-            // STUFE 1: Authentifizierung (nur bei Login oder Registrierung)
+            // Authentifizierung (nur bei Login oder Registrierung)
             if (checkoutMode === 'login' || checkoutMode === 'register') {
                 const authEndpoint = checkoutMode === 'login'
                     ? "http://localhost:8080/api/auth/login"
                     : "http://localhost:8080/api/auth/register";
 
-                // Den Payload je nach Modus an deine bestehenden Auth-Klassen anpassen
                 const authPayload = checkoutMode === 'login'
                     ? { email: contactInfo.email, password: contactInfo.password }
                     : {
@@ -64,16 +73,8 @@ function CheckoutView() {
                         password: contactInfo.password
                     };
 
-                const authResponse = await fetch(authEndpoint, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(authPayload)
-                });
-
-                if (!authResponse.ok) throw new Error("Fehler bei der Anmeldung/Registrierung. Bitte Daten prüfen.");
-
-                const authData = await authResponse.json();
-                jwtToken = authData.token; // Speichert den vom Backend generierten Token
+                const authResponse = await axios.post(authEndpoint, authPayload);
+                jwtToken = authResponse.data.token;
                 localStorage.setItem("token", jwtToken);
             }
 
@@ -88,45 +89,34 @@ function CheckoutView() {
                 contactInfo: checkoutMode === 'guest' ? contactInfo : null // Nur Gäste müssen Kontaktinfos mitsenden
             };
 
-            const headers = { "Content-Type": "application/json" };
-
-            // Füge den Token hinzu, wenn wir nicht im Gast-Modus sind
+            const headers = {};
             if (jwtToken && checkoutMode !== 'guest') {
                 headers["Authorization"] = `Bearer ${jwtToken}`;
             }
             console.log("REACT PAKET:", JSON.stringify(bookingPayload));
 
-            const response = await fetch(bookingEndpoint, {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify(bookingPayload)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.text();
-                throw new Error(errorData || "Fehler bei der Buchung.");
-            }
+            await axios.post(bookingEndpoint, bookingPayload, { headers })
 
             navigate("/success");
 
         } catch (error) {
-            setErrorMessage(error.message);
+            if (error.response && error.response.data && error.response.data.message) {
+                setErrorMessage(error.response.data.message);
+            } else {
+                setErrorMessage("Es gab ein Problem bei der Verbindung zum Server. Bitte versuche es später erneut.");
+            }
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // 1. Die rohen IDs in detaillierte Buchungsinformationen umwandeln
     const detailedOrder = selectedSlots.map(slotId => {
-        // String am Unterstrich teilen: ["1", "2026-10-22T08:00:00"]
         const [courtIdStr, startString] = slotId.split('_');
         const courtId = parseInt(courtIdStr);
 
-        // Den Namen des Courts aus der cartSummary fischen
         const courtData = cartSummary.find(c => c.id === courtId);
         const courtName = courtData ? courtData.name : `Court ${courtId}`;
 
-        // Datum und Uhrzeiten berechnen
         const startDate = new Date(startString);
         const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 Stunde addieren
 
@@ -205,7 +195,6 @@ function CheckoutView() {
                         <h2>Zahlungsmethode wählen</h2>
 
                         <div className="payment-options">
-                            {/* 3. Die Schleife greift jetzt auf das Objekt zu */}
                             {paymentOptions.map(method => (
                                 <label
                                     key={method.id}
@@ -219,7 +208,6 @@ function CheckoutView() {
                                         onChange={(e) => setPaymentMethod(e.target.value)}
                                     />
 
-                                    {/* Ein kleiner Container, der Icon und Text bündelt */}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         {method.icon}
                                         <span style={{ fontWeight: '500' }}>{method.name}</span>
@@ -265,6 +253,13 @@ function CheckoutView() {
                         <span>Gesamtsumme</span>
                         <strong>{grandTotal} €</strong>
                     </div>
+
+                    {errorMessage && (
+                        <div className="error-banner">
+                            <span style={{ fontSize: '20px' }}>⚠️</span>
+                            <span style={{ fontWeight: '500', fontSize: '0.95rem' }}>{errorMessage}</span>
+                        </div>
+                    )}
 
                     <button
                         className="buy-btn"

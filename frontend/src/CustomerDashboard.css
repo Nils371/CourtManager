@@ -1,0 +1,143 @@
+.dashboard-container {
+    display: flex;
+    max-width: 1200px;
+    margin: 40px auto;
+    gap: 40px;
+    padding: 0 20px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.dashboard-sidebar {
+    width: 250px;
+    flex-shrink: 0;
+}
+
+.dashboard-sidebar h2 {
+    font-size: 1.2rem;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e5ea;
+}
+
+.dashboard-sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 32px;
+}
+
+.dashboard-sidebar nav button {
+    text-align: left;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #8e8e93;
+    transition: all 0.2s;
+}
+
+.dashboard-sidebar nav button:hover {
+    background-color: #f8f8f8;
+    color: #1c1c1e;
+}
+
+.dashboard-sidebar nav button.active {
+    background-color: #007aff;
+    color: white;
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 12px;
+    background: none;
+    border: 1px solid #ff3b30;
+    color: #ff3b30;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.logout-btn:hover {
+    background-color: #ff3b30;
+    color: white;
+}
+
+.dashboard-main {
+    flex-grow: 1;
+}
+
+.tab-content h2 {
+    margin-top: 0;
+    margin-bottom: 24px;
+}
+
+.bookings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.booking-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border: 1px solid #e5e5ea;
+    border-radius: 12px;
+    background-color: white;
+}
+
+.booking-card.cancelled {
+    background-color: #f8f8f8;
+    opacity: 0.7;
+}
+
+.booking-info h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.1rem;
+}
+
+.booking-info p {
+    margin: 0 0 12px 0;
+    line-height: 1.5;
+    color: #333;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-badge.confirmed { background-color: #d1fae5; color: #065f46; }
+.status-badge.cancelled { background-color: #fee2e2; color: #991b1b; }
+.status-badge.pending { background-color: #fef3c7; color: #92400e; }
+
+.cancel-btn {
+    padding: 10px 16px;
+    background-color: white;
+    border: 1px solid #ff3b30;
+    color: #ff3b30;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+    background-color: #ff3b30;
+    color: white;
+}
+
+.error-banner {
+    background-color: #fee2e2;
+    color: #991b1b;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #f87171;
+}

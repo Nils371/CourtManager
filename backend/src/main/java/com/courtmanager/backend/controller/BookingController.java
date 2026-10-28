@@ -31,10 +31,10 @@ public class BookingController {
 
     @PostMapping("/checkout")
     public ResponseEntity<List<BookingResponse>> processCheckout(
-            @RequestBody CheckoutRequest request,
-            Principal principal
+            @Valid @RequestBody CheckoutRequest request,
+            @AuthenticationPrincipal User currentUser
             ) {
-        User user = userRepository.findByEmail(principal.getName())
+        User user = userRepository.findByEmail(currentUser.getEmail())
                 .orElseThrow(() -> new RuntimeException("Nutzer nicht gefunden"));
 
         List<Booking> createdBookings = bookingService.processAuthenticatedCheckout(request, user);
@@ -48,7 +48,7 @@ public class BookingController {
 
     @PostMapping("/guest-checkout")
     public ResponseEntity<List<BookingResponse>> processGuestCheckout(
-            @RequestBody CheckoutRequest request
+            @RequestBody @Valid CheckoutRequest request
     ) {
         List<Booking> createdBookings = bookingService.processGuestCheckout(request);
 
