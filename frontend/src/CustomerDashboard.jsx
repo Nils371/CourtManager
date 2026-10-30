@@ -11,6 +11,13 @@ function CustomerDashboard() {
     const [errorMessage, setErrorMessage] = useState("");
     const navigate = useNavigate();
 
+    const [profileData, setProfileData] = useState({firstName: '', lastName: '', email: '', phone: ''});
+    const [passwordData, setPasswordData] = useState({oldPassword: '', newPassword: ''});
+    const [profileMessage, setProfileMessage] = useState({ type: '', text: '' });
+    const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [originalProfileData, setOriginalProfileData] = useState({ firstName: '', lastName: '', email: '', phone: '' });
+
     const fetchBookings = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -27,6 +34,19 @@ function CustomerDashboard() {
         }
     };
 
+    const fetchUserProfile = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('http://localhost:8080/api/users/me', {
+                headers: {Authorization: `Bearer ${token}`}
+            });
+            setProfileData(response.data);
+            setOriginalProfileData(response.data);
+        } catch (error) {
+            console.error("Fehler beim Laden des Profils", error)
+        }
+    };
+
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -34,6 +54,7 @@ function CustomerDashboard() {
             return;
         }
         fetchBookings();
+        fetchUserProfile();
     }, [navigate]);
 
     const handleCancelBooking = async (bookingId) => {
@@ -59,6 +80,55 @@ function CustomerDashboard() {
     const handleLogout = () => {
         localStorage.removeItem('token');
         navigate('/');
+    };
+
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault();
+        setProfileMessage({ type: '', text: '' });
+
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put('http://localhost:8080/api/users/me', profileData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setProfileMessage({ type: 'success', text: 'Profil erfolgreich aktualisiert!' });
+            setIsEditingProfile(false);
+            setOriginalProfileData(profileData);
+        } catch (error) {
+            const errorMsg = error.response?.data?.message || "Fehler beim Speichern des Profils.";
+            setProfileMessage({ type: 'error', text: errorMsg });
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditingProfile(false);
+        setProfileData(originalProfileData);
+        setProfileMessage({ type: '', text: '' });
+    };
+
+    const handleUpdatePassword = async (e) => {
+        e.preventDefault();
+        setPasswordMessage({type: '', text: ''})
+
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put('http://localhost:8080/api/users/me/password', passwordData, {
+                headers: { Authorization: `Bearer ${token}`}
+            });
+            setPasswordMessage({type: 'success', text: 'Passwort erfolgreich aktualisiert!'});
+            setPasswordData({oldPassword: '', newPassword: ''});
+        } catch(error) {
+            const errorMsg = error.response?.data?.message || "Fehler beim Speichern des Passworts";
+            setPasswordMessage({type: 'error', text: errorMsg});
+        }
+    };
+
+    const handleProfileChange = (e) => {
+        setProfileData({...profileData, [e.targetName]: e.target.value });
+    };
+
+    const handlePasswordChange = (e) => {
+        setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
     };
 
     const renderBookingsTab = () => (
@@ -142,8 +212,89 @@ function CustomerDashboard() {
     const renderProfileTab = () => (
         <div className="tab-content">
             <h2>Kontoeinstellungen</h2>
-            <p>Hier kommt bald das Formular hin, um E-Mail, Telefon und Passwort zu ändern.</p>
-            {/*  Formular einfügen */}
+
+            {/* FORMULAR 1: PERSÖNLICHE DATEN */}
+            <div className="settings-section">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <h3 style={{ margin: 0 }}>Persönliche Daten</h3>
+
+                    {!isEditingProfile && (
+                        <button
+                            className="edit-profile-btn"
+                            onClick={() => setIsEditingProfile(true)}
+                        >
+                            Kundendaten ändern
+                        </button>
+                    )}
+                </div>
+
+                {profileMessage.text && (
+                    <div className={`feedback-banner ${profileMessage.type}`}>
+                        {profileMessage.type === 'success' ? '✅' : '⚠️'} {profileMessage.text}
+                    </div>
+                )}
+
+                <form onSubmit={handleUpdateProfile} className="settings-form">
+                    <div className="form-group">
+                        <label>Vorname</label>
+                        <input type="text" name="firstName" className="input-field"
+                               value={profileData.firstName} onChange={handleProfileChange}
+                               disabled={!isEditingProfile} required />
+                    </div>
+                    <div className="form-group">
+                        <label>Nachname</label>
+                        <input type="text" name="lastName" className="input-field"
+                               value={profileData.lastName} onChange={handleProfileChange}
+                               disabled={!isEditingProfile} required />
+                    </div>
+                    <div className="form-group">
+                        <label>E-Mail (Login)</label>
+                        <input type="email" name="email" className="input-field"
+                               value={profileData.email} disabled />
+                    </div>
+                    <div className="form-group">
+                        <label>Telefonnummer</label>
+                        <input type="tel" name="phone" className="input-field"
+                               value={profileData.phone} onChange={handleProfileChange}
+                               disabled={!isEditingProfile} />
+                    </div>
+
+                    {isEditingProfile && (
+                        <div className="form-actions">
+                            <button type="button" className="cancel-edit-btn" onClick={handleCancelEdit}>Abbrechen</button>
+                            <button type="submit" className="save-btn">Änderungen speichern</button>
+                        </div>
+                    )}
+                </form>
+            </div>
+
+            <hr className="divider" />
+
+            {/* FORMULAR 2: PASSWORT ÄNDERN */}
+            <div className="settings-section">
+                <h3>Passwort ändern</h3>
+
+                {passwordMessage.text && (
+                    <div className={`feedback-banner ${passwordMessage.type}`}>
+                        {passwordMessage.type === 'success' ? '✅' : '⚠️'} {passwordMessage.text}
+                    </div>
+                )}
+
+                <form onSubmit={handleUpdatePassword} className="settings-form">
+                    <div className="form-group full-width">
+                        <label>Aktuelles Passwort</label>
+                        <input type="password" name="oldPassword" className="input-field"
+                               value={passwordData.oldPassword} onChange={handlePasswordChange} required />
+                    </div>
+                    <div className="form-group full-width">
+                        <label>Neues Passwort</label>
+                        <input type="password" name="newPassword" className="input-field"
+                               value={passwordData.newPassword} onChange={handlePasswordChange}
+                               minLength="8" required />
+                    </div>
+                    <button type="submit" className="save-btn">Passwort ändern</button>
+                </form>
+            </div>
         </div>
     );
 
