@@ -5,6 +5,7 @@ import CheckoutView from './CheckoutView';
 import axios from "axios";
 import SuccessView from "./SuccessView.jsx";
 import CustomerDashboard from "./CustomerDashboard.jsx";
+import OwnerDashboard from "./OwnerDashboard.jsx";
 
 function App() {
     const [token, setToken] = useState(localStorage.getItem('token') || null);
@@ -91,6 +92,8 @@ function App() {
             <Route path="/success" element={<SuccessView/>}/>
 
             <Route path="/dashboard" element={<CustomerDashboard/>}/>
+
+            <Route path="/owner-dashboard" element={<OwnerDashboard/>}/>
 
         </Routes>
     );

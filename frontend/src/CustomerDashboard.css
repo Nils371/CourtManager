@@ -167,6 +167,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    margin-top: 14px;
 }
 
 .form-group.full-width {
@@ -258,6 +259,7 @@
     justify-self: start;
     padding-left: 24px;
     padding-right: 24px;
+    margin-top: 18px;
 }
 
 .edit-profile-btn:hover {

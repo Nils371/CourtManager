@@ -55,7 +55,7 @@ public class CourtController {
     }
 
     @DeleteMapping("{id}")
-    @PreAuthorize("hasAnyRole('FACILITY_OWNER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
     public ResponseEntity<Void> deleteCourt(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser

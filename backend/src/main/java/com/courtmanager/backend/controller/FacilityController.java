@@ -63,7 +63,7 @@ public class FacilityController {
     }
 
     @GetMapping("/my")
-    @PreAuthorize("hasAnyRole('FACILITY_OWNER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
     public ResponseEntity<List<FacilityResponse>> getMyFacilities(@AuthenticationPrincipal User currentUser) {
         List<Facility> facilities = facilityService.getMyFacilities(currentUser.getId());
 
@@ -75,7 +75,7 @@ public class FacilityController {
     }
 
     @DeleteMapping("{id}")
-    @PreAuthorize("hasAnyRole('FACILITY_OWNER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
     public ResponseEntity<Void> deleteFacility(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser

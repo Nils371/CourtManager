@@ -215,18 +215,8 @@ function CustomerDashboard() {
 
             {/* FORMULAR 1: PERSÖNLICHE DATEN */}
             <div className="settings-section">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h3 style={{ margin: 0 }}>Persönliche Daten</h3>
 
-                    {!isEditingProfile && (
-                        <button
-                            className="edit-profile-btn"
-                            onClick={() => setIsEditingProfile(true)}
-                        >
-                            Kundendaten ändern
-                        </button>
-                    )}
-                </div>
+                <h3 style={{ margin: 0 }}>Persönliche Daten</h3>
 
                 {profileMessage.text && (
                     <div className={`feedback-banner ${profileMessage.type}`}>
@@ -266,6 +256,14 @@ function CustomerDashboard() {
                         </div>
                     )}
                 </form>
+                {!isEditingProfile && (
+                    <button
+                        className="edit-profile-btn"
+                        onClick={() => setIsEditingProfile(true)}
+                    >
+                        Kundendaten ändern
+                    </button>
+                )}
             </div>
 
             <hr className="divider" />
