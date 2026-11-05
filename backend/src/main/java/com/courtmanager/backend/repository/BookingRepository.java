@@ -43,4 +43,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             @Param("dayStart") LocalDateTime dayStart,
             @Param("dayEnd") LocalDateTime dayEnd,
             @Param("cancelledStatus") BookingStatus cancelledStatus
-    );}
+    );
+
+    List<Booking> findByCourtFacilityId(Long facilityId);
+}

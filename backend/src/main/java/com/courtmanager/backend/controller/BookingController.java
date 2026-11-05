@@ -87,11 +87,26 @@ public class BookingController {
         return ResponseEntity.ok(bookingResponse);
     }
 
+    @GetMapping("/facility/{facilityId}")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
+    public ResponseEntity<List<BookingResponse>> getBookingsByFacility(
+            @PathVariable Long facilityId,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        List<Booking> bookings = bookingService.getBookingsByFacility(facilityId, currentUser);
+        List<BookingResponse> responseList = bookings.stream()
+                .map(BookingResponse::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(responseList);
+    }
+
     @GetMapping("/court/{courtId}")
     @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
     public ResponseEntity<List<BookingResponse>> getBookingsByCourt(
             @PathVariable Long courtId,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal User currentUser)
+    {
         List<Booking> bookings = bookingService.getBookingsByCourt(courtId, currentUser);
         List<BookingResponse> responseList = bookings.stream()
                 .map(BookingResponse::fromEntity)

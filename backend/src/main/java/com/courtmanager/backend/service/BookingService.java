@@ -6,6 +6,7 @@ import com.courtmanager.backend.dto.ContactInfo;
 import com.courtmanager.backend.dto.TimeSlot;
 import com.courtmanager.backend.repository.BookingRepository;
 import com.courtmanager.backend.repository.CourtRepository;
+import com.courtmanager.backend.repository.FacilityRepository;
 import com.courtmanager.backend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.awt.print.Book;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -21,7 +23,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +35,7 @@ public class BookingService {
     private final CourtRepository courtRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final FacilityRepository facilityRepository;
 
     @Value("${courtmanager.booking.slot-duration-minutes:60}")
     private int slotDurationMinutes;
@@ -213,5 +218,19 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
         return bookingRepository.save(booking);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Booking> getBookingsByFacility(Long facilityId, User currentUser) {
+        Facility facility = facilityRepository.findById(facilityId)
+                .orElseThrow(() -> new EntityNotFoundException("Anlage nicht gefunden."));
+
+        boolean isOwner = facility.getOwner().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+        if(!isAdmin && !isOwner) {
+            throw new AccessDeniedException("Sie sind nicht berechtigt die Buchungen zu laden.");
+        }
+
+        return bookingRepository.findByCourtFacilityId(facilityId);
     }
 }
