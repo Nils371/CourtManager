@@ -214,3 +214,28 @@
 .table-row-hover:hover {
     background-color: #f8f8f8;
 }
+
+.btn-delete {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #ff3b30;
+    transition: color 0.15s ease;
+}
+
+.btn-delete:hover {
+    color: #d32f2f;
+}
+
+.court-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 8px;
+}
+
+.court-header h3 {
+    margin: 0;
+}
