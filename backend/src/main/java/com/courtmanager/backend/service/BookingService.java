@@ -233,4 +233,26 @@ public class BookingService {
 
         return bookingRepository.findByCourtFacilityId(facilityId);
     }
+
+    public Booking confirmPayment(Long bookingId, User currentUser) {
+        Booking booking = getBookingById(bookingId, currentUser);
+
+        boolean isOwner = booking.getCourt().getFacility().getOwner().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+
+        if (!isAdmin && !isOwner) {
+            throw new AccessDeniedException("Sie sind nicht berechtigt, die Zahlung zu bestätigen.");
+        }
+
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            throw new IllegalStateException("Die Buchung ist storniert und kann nicht bezahlt werden.");
+        }
+
+        if (booking.getIsPaid()) {
+            throw new IllegalStateException("Die Buchung ist bereits bezahlt.");
+        }
+
+        booking.setIsPaid(true);
+        return bookingRepository.save(booking);
+    }
 }

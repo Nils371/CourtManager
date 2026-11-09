@@ -151,4 +151,14 @@ public class BookingController {
 
         return ResponseEntity.ok(responseList);
     }
+
+    @PatchMapping("/{id}/mark-paid")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
+    public ResponseEntity<BookingResponse> markBookingAsPaid(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        BookingResponse response = BookingResponse.fromEntity(bookingService.confirmPayment(id, currentUser));
+        return ResponseEntity.ok(response);
+    }
 }

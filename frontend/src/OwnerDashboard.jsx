@@ -85,6 +85,25 @@ function OwnerDashboard() {
         }
     }
 
+    const handleConfirmPayment = async (bookingId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.patch(`http://localhost:8080/api/bookings/${bookingId}/mark-paid`, {}, {
+                headers: {Authorization: `Bearer ${token}`}
+            });
+
+            setFacilityBookings(prevBookings =>
+                prevBookings.map(booking =>
+                    booking.id === bookingId ? {...booking, isPaid: true} : booking
+                )
+            );
+
+            setSelectedBooking(prevBooking => prevBooking && prevBooking.id === bookingId ? {...prevBooking, isPaid: true} : prevBooking);
+        } catch (error) {
+            setMessage({type: 'error', text: 'Die Zahlung konnte nicht bestätigt werden'});
+        }
+    };
+
     const handleCreateCourt = async (e) => {
         e.preventDefault();
         setMessage({type: '' , text: ''})
@@ -112,7 +131,76 @@ function OwnerDashboard() {
     }
 
     const renderScheduleTab = () => (
-        <div>Tagesplan kommt hier hin</div>
+        <div className="tab-content">
+            <div className="dashboard-header">
+                <h2>Wochenplan der Anlage: {selectedFacility?.name}</h2>
+            </div>
+
+            <div style={{ marginTop: '20px' }}>
+                {facilityBookings.length === 0 ? (
+                    <p>Keine Buchungen für die nächsten 7 Tage.</p>
+                ) : (
+                    <table className="bookings-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                        <tr style={{ borderBottom: '2px solid #e5e5ea' }}>
+                            <th style={{ padding: '12px' }}>Datum & Uhrzeit</th>
+                            <th style={{ padding: '12px' }}>Platz</th>
+                            <th style={{ padding: '12px' }}>Kunde</th>
+                            <th style={{ padding: '12px' }}>Zahlung</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {facilityBookings.map(booking => {
+                            const startTime = new Date(booking.startTime);
+                            return (
+                                <tr
+                                    key={booking.id}
+                                    onClick={() => setSelectedBooking(booking)}
+                                    style={{ borderBottom: '1px solid #e5e5ea', cursor: 'pointer' }}
+                                    className="table-row-hover"
+                                >
+                                    <td style={{ padding: '12px' }}>
+                                        {startTime.toLocaleDateString("de-DE", { weekday: 'short', day: '2-digit', month: '2-digit' })} | {startTime.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' })} Uhr
+                                    </td>
+                                    <td style={{ padding: '12px', fontWeight: 'bold' }}>{booking.courtName}</td>
+                                    <td style={{ padding: '12px' }}>{booking.customerName}</td>
+                                    <td style={{ padding: '12px' }}>
+                                        {booking.isPaid ? '✅ Bezahlt' : '❌ Offen'}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+
+            {selectedBooking && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3 style={{ marginTop: 0 }}>Buchungsdetails</h3>
+                        <p><strong>Datum & Uhrzeit:</strong> {new Date(selectedBooking.startTime).toLocaleString("de-DE")}</p>
+                        <p><strong>Platz:</strong> {selectedBooking.courtName}</p>
+                        <p><strong>Kunde:</strong> {selectedBooking.customerName}</p>
+                        <p><strong>E-Mail:</strong> {selectedBooking.customerEmail}</p>
+                        <p><strong>Telefon:</strong> {selectedBooking.customerPhone ||
+                            <span style={{ color: '#888', fontStyle: 'italic' }}>Nicht angegeben</span>}</p>
+                        <p><strong>Status:</strong> {selectedBooking.status}</p>
+                        <p><strong>Preis:</strong> {Number(selectedBooking.totalPrice).toFixed(2)} €</p>
+
+                        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                            <button className="btn-secondary" onClick={() => setSelectedBooking(null)}>Schließen</button>
+                            {!selectedBooking.isPaid && (
+                                <button className="btn-primary"
+                                        onClick={() => handleConfirmPayment(selectedBooking.id)}>
+                                    Zahlung bestätigen
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 
     const renderCourtsTab = () => (
@@ -193,7 +281,7 @@ function OwnerDashboard() {
                         className={`sidebar-btn ${activeTab === 'schedule' ? 'active' : ''}`}
                         onClick={() => setActiveTab('schedule')}
                     >
-                        Tagesplan
+                        Wochenplan
                     </button>
                     <button
                         className={`sidebar-btn ${activeTab === 'courts' ? 'active' : ''}`}
