@@ -4,6 +4,8 @@ import com.courtmanager.backend.domain.Facility;
 import com.courtmanager.backend.domain.Role;
 import com.courtmanager.backend.domain.User;
 import com.courtmanager.backend.dto.CreateFacilityRequest;
+import com.courtmanager.backend.dto.FacilityResponse;
+import com.courtmanager.backend.dto.UpdateFacilityRequest;
 import com.courtmanager.backend.repository.FacilityRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -62,5 +64,31 @@ public class FacilityService {
         }
 
         facilityRepository.delete(facility);
+    }
+
+    @Transactional
+    public Facility updateFacility(Long facilityId, UpdateFacilityRequest request, User currentUser) {
+        Facility facility = getFacilityById(facilityId);
+
+        boolean isOwner = facility.getOwner().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
+
+        if(!isOwner && !isAdmin) {
+            throw new AccessDeniedException("Sie sind nicht berechtigt, diese Facility zu aktualisieren");
+        }
+
+        if(request.openingTime().isAfter(request.closingTime())) {
+            throw new IllegalArgumentException("Die Öffnungszeit muss vor der Schließzeit sein.");
+        }
+
+        facility.setName(request.name());
+        facility.setHasShower(request.hasShower());
+        facility.setHasToilet(request.hasToilet());
+        facility.setHasSnackBar(request.hasSnackBar());
+        facility.setHasChangingRoom(request.hasChangingRoom());
+        facility.setOpeningTime(request.openingTime());
+        facility.setClosingTime(request.closingTime());
+
+        return facilityRepository.save(facility);
     }
 }

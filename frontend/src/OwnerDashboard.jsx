@@ -17,6 +17,9 @@ function OwnerDashboard() {
     const [showNewCourtForm, setShowNewCourtForm] = useState(false);
     const [newCourt, setNewCourt] = useState({name: '', isIndoor: '', hourlyRate: ''});
 
+    const [isEditingFacility, setIsEditingFacility] = useState(false);
+    const [editFacility, setEditFacility] = useState(null);
+
     const [message, setMessage] = useState({ type: '', text: ''});
 
     useEffect(() => {
@@ -46,6 +49,12 @@ function OwnerDashboard() {
 
         fetchFacilities();
     }, [navigate]);
+
+    useEffect(() => {
+        if (selectedFacility) {
+            setEditFacility({...selectedFacility});
+        }
+    }, [selectedFacility]);
 
     const fetchCourts = async (facilityId) => {
         try {
@@ -131,6 +140,46 @@ function OwnerDashboard() {
         }
     }
 
+    const handleCancelEditFacility = () => {
+        setEditFacility({...selectedFacility});
+        setIsEditingFacility(false);
+        setMessage({type: '', text: ''});
+    };
+
+    const handleUpdateFacility = async (e) => {
+        e.preventDefault();
+        setMessage({type: '' , text: ''})
+
+        try {
+            const token = localStorage.getItem('token');
+            const payload = {
+                name: editFacility.name,
+                openingTime: editFacility.openingTime,
+                closingTime: editFacility.closingTime,
+                hasShower: editFacility.hasShower,
+                hasChangingRoom: editFacility.hasChangingRoom,
+                hasToilet: editFacility.hasToilet,
+                hasSnackBar: editFacility.hasSnackBar
+            };
+
+            const response = await axios.put(`http://localhost:8080/api/facilities/${selectedFacility.id}`, payload, {
+                headers: {Authorization: `Bearer ${token}`}
+            });
+
+            setSelectedFacility(response.data);
+            setEditFacility(response.data);
+            setFacilities(prevFacilities =>
+                prevFacilities.map(facility => facility.id === selectedFacility.id ? response.data : facility)
+            );
+            setIsEditingFacility(false);
+
+            setMessage({ type: 'success', text: 'Anlage erfolgreich aktualisiert!' });
+        } catch (error) {
+            const errorMsg = error.response?.data?.message || "Fehler beim Aktualisieren der Anlage"
+            setMessage({type: 'error', text: errorMsg});
+        }
+    };
+
     const handleDeleteCourt = async (courtId) => {
         if (!window.confirm("Bist du sicher, dass du diesen Platz löschen möchtest?")) {
             return;
@@ -149,6 +198,110 @@ function OwnerDashboard() {
             setMessage({type: 'error', text: errorMsg});
         }
     };
+
+    const formatTime = (timeString) => {
+        if (!timeString) return '';
+        return timeString.substring(0, 5);
+    };
+
+    const renderSettingsTab = () => (
+        <div className="settings-wrapper">
+            {!editFacility ? (
+                "Lade Daten..."
+            ) : !isEditingFacility ? (
+                /* --- LESE-MODUS --- */
+                <div className="settings-section">
+                    <div className="settings-info">
+                        <div className="info-group full-width">
+                            <label>Name der Anlage</label>
+                            <p className="fw-500">{selectedFacility?.name}</p>
+                        </div>
+                        <div className="info-group half-width">
+                            <label>Öffnungszeiten</label>
+                            <p>
+                                {formatTime(selectedFacility?.openingTime)} - {formatTime(selectedFacility?.closingTime)} Uhr
+                            </p>
+                        </div>
+                        <div className="info-group full-width">
+                            <label className="mb-8">Ausstattung</label>
+                            <div className="amenities-container">
+                                {selectedFacility?.hasShower && <span>🚿 Dusche</span>}
+                                {selectedFacility?.hasChangingRoom && <span>👕 Umkleide</span>}
+                                {selectedFacility?.hasToilet && <span>🚽 Toilette</span>}
+                                {selectedFacility?.hasSnackBar && <span>☕ Snackbar</span>}
+                                {!selectedFacility?.hasShower && !selectedFacility?.hasChangingRoom && !selectedFacility?.hasToilet && !selectedFacility?.hasSnackBar && (
+                                    <span className="text-muted">Keine spezielle Ausstattung angegeben</span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <button className="btn-primary" onClick={() => setIsEditingFacility(true)}>
+                        Daten bearbeiten
+                    </button>
+                </div>
+            ) : (
+                /* --- BEARBEITUNGS-MODUS --- */
+                <div className="settings-section">
+                    <h3 className="section-title">Anlagendaten bearbeiten</h3>
+
+                    <form onSubmit={handleUpdateFacility} className="settings-form">
+                        <div className="form-group form-row-full">
+                            <label htmlFor="facilityName">Name der Anlage:</label>
+                            <input type="text" id="facilityName" className="input-field"
+                                   value={editFacility.name || ''} onChange={(e) => setEditFacility({...editFacility, name: e.target.value})} required />
+                        </div>
+
+                        <div className="form-row-split">
+                            <div className="form-group form-col">
+                                <label htmlFor="openingTime">Öffnungszeit:</label>
+                                <input type="time" id="openingTime" className="input-field"
+                                       value={formatTime(editFacility.openingTime)}
+                                       onChange={(e) => setEditFacility({...editFacility, openingTime: e.target.value})} required />
+                            </div>
+                            <div className="form-group form-col">
+                                <label htmlFor="closingTime">Schließzeit:</label>
+                                <input type="time" id="closingTime" className="input-field"
+                                       value={formatTime(editFacility.closingTime)}
+                                       onChange={(e) => setEditFacility({...editFacility, closingTime: e.target.value})} required />
+                            </div>
+                        </div>
+
+                        <div className="form-checkbox-group">
+                            <label className="form-checkbox-label-main">Ausstattung:</label>
+
+                            <div className="form-checkbox-container">
+                                <label className="form-checkbox-item">
+                                    <input type="checkbox" checked={!!editFacility.hasShower} onChange={(e) => setEditFacility({...editFacility, hasShower: e.target.checked})} />
+                                    Dusche
+                                </label>
+                                <label className="form-checkbox-item">
+                                    <input type="checkbox" checked={!!editFacility.hasChangingRoom} onChange={(e) => setEditFacility({...editFacility, hasChangingRoom: e.target.checked})} />
+                                    Umkleide
+                                </label>
+                                <label className="form-checkbox-item">
+                                    <input type="checkbox" checked={!!editFacility.hasToilet} onChange={(e) => setEditFacility({...editFacility, hasToilet: e.target.checked})} />
+                                    Toilette
+                                </label>
+                                <label className="form-checkbox-item">
+                                    <input type="checkbox" checked={!!editFacility.hasSnackBar} onChange={(e) => setEditFacility({...editFacility, hasSnackBar: e.target.checked})} />
+                                    Snackbar
+                                </label>
+                            </div>
+                        </div>
+
+                        <div className="form-actions">
+                            <button type="button" className="btn-secondary" onClick={handleCancelEditFacility}>
+                                Abbrechen
+                            </button>
+                            <button type="submit" className="btn-primary">
+                                Änderungen speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+        </div>
+    );
 
     const renderScheduleTab = () => {
         const totalRevenue = facilityBookings.reduce((sum, booking) => sum + (booking.isPaid ? booking.totalPrice : 0), 0);
@@ -194,6 +347,16 @@ function OwnerDashboard() {
                                 );
                             })}
                             </tbody>
+                            <tfoot>
+                                <tr style={{ textAlign: 'start', borderTop: '2px solid #e5e5ea', backgroundColor: '#f8f8f8' }}>
+                                    <th colSpan={3} style={{ padding: '12px', fontWeight: 'bold' }}>
+                                        Gesamtumsatz (bezahlt) der nächsten 7 Tage:
+                                    </th>
+                                    <td style={{ padding: '12px', fontWeight: 'bold', color: '#1c1c1e', fontSize: '1.1rem' }}>
+                                        {Number(totalRevenue).toFixed(2)} €
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
                     )}
                 </div>
@@ -323,6 +486,12 @@ function OwnerDashboard() {
                     >
                         Platzverwaltung
                     </button>
+                    <button
+                        className={`sidebar-btn ${activeTab === 'settings' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('settings')}
+                    >
+                        Einstellungen
+                    </button>
                 </nav>
                 <button className="logout-btn" onClick={() => { localStorage.removeItem('token'); navigate('/'); }}>
                     Abmelden
@@ -331,7 +500,7 @@ function OwnerDashboard() {
 
             {/* RECHTE SPALTE: Hauptinhalt */}
             <main className="dashboard-main">
-                {activeTab === 'courts' ? renderCourtsTab() : renderScheduleTab()}
+                {activeTab === 'courts' ? renderCourtsTab() : activeTab === 'settings' ? renderSettingsTab() : renderScheduleTab()}
             </main>
         </div>
     );

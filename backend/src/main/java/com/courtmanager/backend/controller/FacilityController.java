@@ -6,6 +6,7 @@ import com.courtmanager.backend.domain.User;
 import com.courtmanager.backend.dto.CourtResponse;
 import com.courtmanager.backend.dto.CreateFacilityRequest;
 import com.courtmanager.backend.dto.FacilityResponse;
+import com.courtmanager.backend.dto.UpdateFacilityRequest;
 import com.courtmanager.backend.service.CourtService;
 import com.courtmanager.backend.service.FacilityService;
 import jakarta.validation.Valid;
@@ -83,5 +84,18 @@ public class FacilityController {
         facilityService.deleteFacility(id, currentUser);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("{id}")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
+    public ResponseEntity<FacilityResponse> updateFacility(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateFacilityRequest request,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        Facility updatedFacility = facilityService.updateFacility(id, request, currentUser);
+
+        FacilityResponse response = FacilityResponse.fromEntity(updatedFacility);
+        return ResponseEntity.ok(response);
     }
 }
