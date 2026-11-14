@@ -81,6 +81,10 @@ public class FacilityService {
             throw new IllegalArgumentException("Die Öffnungszeit muss vor der Schließzeit sein.");
         }
 
+        if(request.openingTime().getMinute() != 0 || request.closingTime().getMinute() != 0) {
+            throw new IllegalArgumentException("Die Öffnungs- und Schließzeiten müssen auf volle Stunden gesetzt werden.");
+        }
+
         facility.setName(request.name());
         facility.setHasShower(request.hasShower());
         facility.setHasToilet(request.hasToilet());

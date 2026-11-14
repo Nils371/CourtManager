@@ -19,6 +19,7 @@ function OwnerDashboard() {
 
     const [isEditingFacility, setIsEditingFacility] = useState(false);
     const [editFacility, setEditFacility] = useState(null);
+    const twentyFourHours = Array.from( { length : 24 }, (_, i) => i + 1).map(hour => hour.toString().padStart(2, '0').concat(':00'));
 
     const [message, setMessage] = useState({ type: '', text: ''});
 
@@ -253,16 +254,30 @@ function OwnerDashboard() {
 
                         <div className="form-row-split">
                             <div className="form-group form-col">
-                                <label htmlFor="openingTime">Öffnungszeit:</label>
-                                <input type="time" id="openingTime" className="input-field"
-                                       value={formatTime(editFacility.openingTime)}
-                                       onChange={(e) => setEditFacility({...editFacility, openingTime: e.target.value})} required />
+                                <select
+                                    value = {editFacility.openingTime}
+                                    onChange={(e) => setEditFacility({...editFacility, openingTime: e.target.value})}
+                                    className="input-field"
+                                >
+                                    {twentyFourHours.map(hour => (
+                                        <option key={hour} value={hour}>
+                                            {hour}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <div className="form-group form-col">
-                                <label htmlFor="closingTime">Schließzeit:</label>
-                                <input type="time" id="closingTime" className="input-field"
-                                       value={formatTime(editFacility.closingTime)}
-                                       onChange={(e) => setEditFacility({...editFacility, closingTime: e.target.value})} required />
+                                <select
+                                    value = {editFacility.closingTime}
+                                    onChange={(e) => setEditFacility({...editFacility, closingTime: e.target.value})}
+                                    className="input-field"
+                                >
+                                    {twentyFourHours.map(hour => (
+                                        <option key={hour} value={hour}>
+                                            {hour}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
