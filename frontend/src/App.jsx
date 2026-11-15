@@ -5,7 +5,7 @@ import CheckoutView from './CheckoutView';
 import axios from "axios";
 import SuccessView from "./SuccessView.jsx";
 import CustomerDashboard from "./CustomerDashboard.jsx";
-import OwnerDashboard from "./OwnerDashboard.jsx";
+import OwnerDashboard from "./OwnerDashboard/OwnerDashboard.jsx";
 
 function App() {
     const [token, setToken] = useState(localStorage.getItem('token') || null);
