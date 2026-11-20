@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useFacilityUpdate } from "../hooks/useFacilityUpdate.js";
 
-const FacilitySettings = ({ facility, onFacilityUpdated }) => {
+const FacilityManagement = ({ facility, onFacilityUpdated }) => {
     const [isEditingFacility, setIsEditingFacility] = useState(false);
     const [editFacility, setEditFacility] = useState(null);
 
@@ -164,4 +164,4 @@ const FacilitySettings = ({ facility, onFacilityUpdated }) => {
         )}
     </div>
 ) }
-export default FacilitySettings;
+export default FacilityManagement;

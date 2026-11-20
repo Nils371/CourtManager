@@ -1,5 +1,6 @@
 package com.courtmanager.backend.service;
 
+import com.courtmanager.backend.domain.Court;
 import com.courtmanager.backend.domain.Facility;
 import com.courtmanager.backend.domain.Role;
 import com.courtmanager.backend.domain.User;
@@ -19,6 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FacilityService {
 
+    private final BookingService bookingService;
     private final FacilityRepository facilityRepository;
 
     @Transactional
@@ -62,6 +64,15 @@ public class FacilityService {
         if(!isOwner && !isAdmin) {
             throw new AccessDeniedException("Sie sind nicht berechtigt, diese Facility zu löschen");
         }
+
+        List<Court> facilityCourts = facilityRepository.findByFacilityId(facilityId);
+
+        facilityCourts.forEach(court -> {
+            long courtId = court.getId();
+            if (!bookingService.getBookingsByCourt(courtId, currentUser).isEmpty()) {
+                throw new IllegalStateException("Die Facility kann nicht gelöscht werden, da noch Buchungen vorhanden sind.");
+            }
+        });
 
         facilityRepository.delete(facility);
     }

@@ -2,7 +2,7 @@ import { useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import axios from "axios";
 import './OwnerDashboard.css';
-import FacilitySettings from "./FacilitySettings.jsx";
+import FacilityManagement from "./FacilityManagement.jsx";
 import FacilitySchedule from "./FacilitySchedule.jsx";
 import CourtManagement from "./CourtManagement.jsx";
 
@@ -92,7 +92,7 @@ function OwnerDashboard() {
                         className={`sidebar-btn ${activeTab === 'settings' ? 'active' : ''}`}
                         onClick={() => setActiveTab('settings')}
                     >
-                        Einstellungen
+                        Anlagenverwaltung
                     </button>
                 </nav>
                 <button className="logout-btn" onClick={() => { localStorage.removeItem('token'); navigate('/'); }}>
@@ -120,7 +120,7 @@ function OwnerDashboard() {
                                     <CourtManagement facility={selectedFacility} />
                                 )}
                                 {activeTab === 'settings' && (
-                                    <FacilitySettings facility={selectedFacility} onFacilityUpdated={handleOnFacilityUpdated} />
+                                    <FacilityManagement facility={selectedFacility} onFacilityUpdated={handleOnFacilityUpdated} />
                                 )}
                             </>
                         ) : (
